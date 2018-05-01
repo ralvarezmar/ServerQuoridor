@@ -1,4 +1,3 @@
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -10,7 +9,6 @@ public class Server{
 
 	private static final int PORT = 2020;
 	private ServerSocket socket;
-	//private ArrayList<Worker> workers;
 	private Thread thread;
 	protected Attend attend;
 
@@ -23,20 +21,7 @@ public class Server{
 		}
 	}
 
-	/*public synchronized boolean added(Worker w){
-		boolean add = true;
-		for(int i = 0; i < workers.size(); i++){
-			if(w.getId() == workers.get(i).getId()){
-				add = false;
-				break;
-			}
-		}
-		if(add){
-			workers.add(w);
-		}
-		return add;
-	}
-*/
+	
 	private void connect() {
 		try{
 			System.out.println("wait clients ...");

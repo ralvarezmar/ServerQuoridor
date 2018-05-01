@@ -1,10 +1,8 @@
+
 import java.io.Serializable;
 
 public class Box implements Serializable{
 
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	private Coordinate c;
     private int id;

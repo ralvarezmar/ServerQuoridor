@@ -1,9 +1,13 @@
+package es.urjc.mov.rmartin.quor.Graphic;
 
 import java.io.Serializable;
 
 public class Box implements Serializable{
 
-	private static final long serialVersionUID = 1L;
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8049265615880043727L;
 	private Coordinate c;
     private int id;
     private Status status;

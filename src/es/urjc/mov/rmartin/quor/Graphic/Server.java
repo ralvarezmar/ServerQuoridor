@@ -6,6 +6,8 @@ import java.io.ObjectInputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import es.urjc.mov.rmartin.quor.Game.Move;
+
 public class Server{
 
 	private static final int PORT = 2020;
@@ -29,15 +31,15 @@ public class Server{
 			for(;;){
 				Socket incon = socket.accept();
 				ObjectInputStream o = new ObjectInputStream(incon.getInputStream());
-				Box c = null;
+				Move m = null;
 				try {
-					c = (Box) o.readObject();
+					m = (Move) o.readObject();
 				} catch (ClassNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			
-				System.out.println("client acepted " + incon.getRemoteSocketAddress() + " " + c);
+				System.out.println("client acepted " + incon.getRemoteSocketAddress() + " " + m);
 				
 				thread = new Thread(new Attend(incon));
 				thread.start();	

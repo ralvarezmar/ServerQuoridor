@@ -85,54 +85,45 @@ public class Server{
 		private Socket incon;
 		private ObjectInputStream in;
 		private ObjectOutputStream out;
+		private Socket outcon;
 
 		public Attend(Socket incon){
 			this.incon = incon;
 			try {
-				ObjectInputStream in = new ObjectInputStream(incon.getInputStream());
-				ObjectOutputStream out = new ObjectOutputStream(incon.getOutputStream());
+				in = new ObjectInputStream(incon.getInputStream());
+				//ObjectOutputStream out = new ObjectOutputStream(incon.getOutputStream());
 			} catch (IOException e) {
 				closeAll();
 				thread.interrupt();
-				throw new RuntimeException(this + "open streams: " + e);
+				//throw new RuntimeException(this + "open streams: " + e);
 			}
 		}
-		private void receiveMoves(){
+		private void receiveMoves() throws ClassNotFoundException, IOException{
 			try {
 				for(;;){
 					Move m;				
-					try {
-						m = (Move) in.readObject();
-						in.close();
-						if(incon.getRemoteSocketAddress()==clients[0].ip) {
-							
-						}
+					System.out.println("Espero jugada");
+					m = (Move) in.readObject();
+					System.out.println("Jugada recibida: " + m);
+					in.close();
+					incon.close();
+					outcon = new Socket();
+					SocketAddress ip;
+					if(incon.getRemoteSocketAddress()==clients[0].ip) {
+						ip = clients[1].ip;
+						System.out.println("Mando jugada a: " + clients[1]);
+					}else {
+						ip = clients[0].ip;
+						System.out.println("Mando jugada a: " + clients[0]);
 					}
-					/*
-					request = Msg.ReadFrom(idata);
-					switch(request.type()){
-					case TADD:
-						Tadd tadd = (Tadd)request;
-						Worker w = tadd.getWorker();
-						if(added(w)){
-							response = new Msg.Rok();
-						}else{
-							response = new Msg.Rerror();
-						}	
-						break;
-					default:
-						break;
-					}
-					if(response != null){
-						response.writeTo(odata);
-					}
-				}
-				*/
+					outcon.connect(ip, 2000);
+					ObjectOutputStream out = new ObjectOutputStream(outcon.getOutputStream());
+					out.writeObject(m);				
+					outcon.close();
 				}
 			}catch(RuntimeException e) {
 				System.out.println("conection closed");
 			}
-			*/
 }
 
 		public void run(){	
@@ -147,19 +138,23 @@ public class Server{
 
 		public void closeAll(){
 			try {
-				if(idata != null){
-					idata.close();
-					idata = null;
+				if(in != null){
+					in.close();
+					in = null;
 				}
-				if(odata != null){
-					odata.close();
-					odata = null;
-				}	
+				if(out != null){
+					out.close();
+					out = null;
+				}
 				if(incon != null){
 					incon.close();
 					incon = null;
 				}
-			} catch (IOException e) {
+				if(outcon!=null) {
+					outcon.close();
+					outcon=null;
+				}
+				} catch (IOException e) {
 				System.err.println(this + ": " + e);  
 			}
 		}

@@ -2,9 +2,13 @@ package es.urjc.mov.rmartin.quor.Graphic;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 
 import es.urjc.mov.rmartin.quor.Game.Move;
 
@@ -14,7 +18,8 @@ public class Server{
 	private ServerSocket socket;
 	private Thread thread;
 	protected Attend attend;
-
+	private Client clients[] = new Client[2];
+	
 	public Server(){
 		try {
 			this.socket = new ServerSocket(PORT);
@@ -29,20 +34,29 @@ public class Server{
 		try{
 			System.out.println("wait clients ...");
 			for(;;){
-				Socket incon = socket.accept();
-				ObjectInputStream o = new ObjectInputStream(incon.getInputStream());
-				Move m = null;
-				try {
-					m = (Move) o.readObject();
-				} catch (ClassNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				if(clients[0]==null || clients[1]==null) {
+					int c;
+					Socket incon = socket.accept();
+					//ObjectInputStream o = new ObjectInputStream(incon.getInputStream());
+				    InputStream in = incon.getInputStream();			
+				    //Move m = null;
+					String nick= "";
+					
+						while ((c = in.read()) != -1) {
+						      nick = nick + (char) c;
+						 }	
+					//} 
+					SocketAddress ip = incon.getRemoteSocketAddress();
+					Client client = new Client(ip,nick);
+					if(clients[0]==null) {
+						clients[0]=client;
+					}else if(clients[1]==null){
+						clients[1]=client;
+					}		
+					System.out.println("Cliente nuevo: " + client);
+					thread = new Thread(new Attend(incon));
+					thread.start();	
 				}
-			
-				System.out.println("client acepted " + incon.getRemoteSocketAddress() + " " + m);
-				
-				thread = new Thread(new Attend(incon));
-				thread.start();	
 			}
 		} catch (IOException e) {
 			System.err.println("connection error: " + e);
@@ -69,26 +83,32 @@ public class Server{
 	private class Attend implements Runnable{
 
 		private Socket incon;
-		private DataInputStream idata;
-		private DataOutputStream odata;
+		private ObjectInputStream in;
+		private ObjectOutputStream out;
 
 		public Attend(Socket incon){
 			this.incon = incon;
 			try {
-				idata = new DataInputStream(incon.getInputStream());
-				odata = new DataOutputStream(incon.getOutputStream());
+				ObjectInputStream in = new ObjectInputStream(incon.getInputStream());
+				ObjectOutputStream out = new ObjectOutputStream(incon.getOutputStream());
 			} catch (IOException e) {
 				closeAll();
 				thread.interrupt();
 				throw new RuntimeException(this + "open streams: " + e);
 			}
 		}
-
-		private void sendMessages(){
-			/*Msg response = null;
-			Msg request = null;
+		private void receiveMoves(){
 			try {
 				for(;;){
+					Move m;				
+					try {
+						m = (Move) in.readObject();
+						in.close();
+						if(incon.getRemoteSocketAddress()==clients[0].ip) {
+							
+						}
+					}
+					/*
 					request = Msg.ReadFrom(idata);
 					switch(request.type()){
 					case TADD:
@@ -107,19 +127,20 @@ public class Server{
 						response.writeTo(odata);
 					}
 				}
-				
+				*/
+				}
 			}catch(RuntimeException e) {
 				System.out.println("conection closed");
 			}
 			*/
-		}
+}
 
 		public void run(){	
-			try{
-				sendMessages();	
-			} catch (Exception e) {
-				e.printStackTrace();	
-			} finally{
+			try {
+				receiveMoves();
+			}catch(Exception e){
+				e.printStackTrace();
+			}finally {
 				closeAll();
 			}
 		}

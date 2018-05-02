@@ -1,9 +1,7 @@
 package es.urjc.mov.rmartin.quor.Graphic;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
@@ -37,15 +35,11 @@ public class Server{
 				if(clients[0]==null || clients[1]==null) {
 					int c;
 					Socket incon = socket.accept();
-					//ObjectInputStream o = new ObjectInputStream(incon.getInputStream());
 				    InputStream in = incon.getInputStream();			
-				    //Move m = null;
-					String nick= "";
-					
-						while ((c = in.read()) != -1) {
-						      nick = nick + (char) c;
-						 }	
-					//} 
+					String nick= "";					
+					while ((c = in.read()) != -1) {
+					      nick = nick + (char) c;
+					 }
 					SocketAddress ip = incon.getRemoteSocketAddress();
 					Client client = new Client(ip,nick);
 					if(clients[0]==null) {
@@ -88,21 +82,15 @@ public class Server{
 		private Socket outcon;
 
 		public Attend(Socket incon){
-			this.incon = incon;
-			try {
-				in = new ObjectInputStream(incon.getInputStream());
-				//ObjectOutputStream out = new ObjectOutputStream(incon.getOutputStream());
-			} catch (IOException e) {
-				closeAll();
-				thread.interrupt();
-				//throw new RuntimeException(this + "open streams: " + e);
-			}
+			this.incon = incon;			
 		}
 		private void receiveMoves() throws ClassNotFoundException, IOException{
-			try {
 				for(;;){
+					Socket incon = socket.accept();
+					in = new ObjectInputStream(incon.getInputStream());
 					Move m;				
-					System.out.println("Espero jugada");
+					System.out.println("Espero jugada");					
+					while(in.available()<=0);
 					m = (Move) in.readObject();
 					System.out.println("Jugada recibida: " + m);
 					in.close();
@@ -116,15 +104,13 @@ public class Server{
 						ip = clients[0].ip;
 						System.out.println("Mando jugada a: " + clients[0]);
 					}
-					outcon.connect(ip, 2000);
+					outcon.connect(ip);
 					ObjectOutputStream out = new ObjectOutputStream(outcon.getOutputStream());
 					out.writeObject(m);				
 					outcon.close();
 				}
-			}catch(RuntimeException e) {
-				System.out.println("conection closed");
 			}
-}
+
 
 		public void run(){	
 			try {
@@ -135,6 +121,8 @@ public class Server{
 				closeAll();
 			}
 		}
+
+
 
 		public void closeAll(){
 			try {

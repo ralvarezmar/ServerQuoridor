@@ -4,15 +4,14 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import es.urjc.mov.rmartin.quor.Game.Move;
+import es.urjc.mov.rmartin.quor.Graphic.Message.ErrorMessage;
 import es.urjc.mov.rmartin.quor.Graphic.Message.Login;
 import es.urjc.mov.rmartin.quor.Graphic.Message.OkMessage;
 
@@ -21,9 +20,12 @@ public class Server{
 	private static final int PORT = 2020;
 	private ServerSocket socket;
 	private Thread thread;
-	protected Attend attend;
+	private int numGames=0;
+	//protected Attend attend;
 	Map<String, SocketAddress> clientsMap = new HashMap<String, SocketAddress>();
 	private Client clients[] = new Client[2];
+	private ArrayList<Game> partidas = new ArrayList<Game>();
+	
 	
 	public Server(){
 		try {
@@ -33,6 +35,41 @@ public class Server{
 		}
 	}
 
+	private Boolean isClient(String nick) {
+		if(clientsMap.get(nick)!=null) {
+			return true;
+		}
+		return false;
+	}
+	
+	private void loginMessage(Message message,Socket s) throws IOException {
+		Login login = (Login) message;
+		String nick=login.getNick();
+		if(!isClient(nick)) {
+			System.out.println("Client accepted: " + nick);
+			SocketAddress ip = s.getRemoteSocketAddress();
+			Client client = new Client(ip,nick);
+			clientsMap.put(nick, ip);
+			if(clients[0]==null) {
+				clients[0]=client;
+			}else if(clients[1]==null){
+				clients[1]=client;
+				Game game = new Game(numGames,clients[0],clients[1]);
+				partidas.add(game);
+				clients = new Client[2];
+			}
+			OkMessage ok = new OkMessage();
+			OutputStream writer= s.getOutputStream();
+		    DataOutputStream out=new DataOutputStream(writer);
+			ok.writeTo(out);
+		}else {
+			System.out.println("Client rejected: " + nick);
+			ErrorMessage error = new ErrorMessage();
+			OutputStream writer= s.getOutputStream();
+		    DataOutputStream out=new DataOutputStream(writer);
+			error.writeTo(out);
+		}
+	}
 	
 	private void connect() {
 		try{
@@ -42,37 +79,23 @@ public class Server{
 					Socket s = socket.accept();
 				    InputStream reader= s.getInputStream();
 			        DataInputStream o=new DataInputStream(reader);
-					Message message = Message.ReadFrom(o);
-				
+					Message message = Message.ReadFrom(o);	
+					System.out.println("Mensaje recibido" + message);
 					switch(message.type()){
 						case LOGIN:
-							Login login = (Login) message;
-							String nick=login.getNick();		
-							if(!isClient(nick)) {
-								SocketAddress ip = s.getRemoteSocketAddress();
-								clientsMap.put(nick, ip);
-								OkMessage ok = new OkMessage();		
-								OutputStream writer= s.getOutputStream();
-							    DataOutputStream out=new DataOutputStream(writer);
-								ok.writeTo(out);
-							}
-							break;
+							loginMessage(message,s);							
 						case PLAY:
 							break;
 						case ERROR:
+							break;
+						default:
 							break;
 					}
 					//Client client = new Client(ip,message.getNick());
 					/*
 					if(clientsMap.get(nick)==null) {
 					}
-
-					if(clients[0]==null) {
-						clients[0]=client;
-					}else if(clients[1]==null){
-						clients[1]=client;
-					}		*/
-					System.out.println("Mensaje recibido" + message);
+						*/
 					//thread = new Thread(new Attend(incon));
 					thread.start();	
 				}
@@ -99,12 +122,7 @@ public class Server{
 		thread.start();
 	}
 	
-	private Boolean isClient(String nick) {
-		if(clientsMap.get(nick)!=null) {
-			return true;
-		}
-		return false;
-	}
+
 	
 /*
 	private class Attend implements Runnable{
@@ -186,7 +204,8 @@ public class Server{
 				s.start();
 			}		
 		}.start();		
-	}
+	}	
+	
 }
 
 

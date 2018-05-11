@@ -11,6 +11,7 @@ import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
 import es.urjc.mov.rmartin.quor.Graphic.Message.ErrorMessage;
 import es.urjc.mov.rmartin.quor.Graphic.Message.Login;
 import es.urjc.mov.rmartin.quor.Graphic.Message.OkMessage;
@@ -33,7 +34,7 @@ public class Server{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
+	}	
 
 	private Boolean isClient(String nick) {
 		if(clientsMap.get(nick)!=null) {
@@ -43,6 +44,7 @@ public class Server{
 	}
 	
 	private void loginMessage(Message message,Socket s) throws IOException {
+		System.out.println("Entra en funcion");
 		Login login = (Login) message;
 		String nick=login.getNick();
 		if(!isClient(nick)) {
@@ -56,6 +58,7 @@ public class Server{
 				clients[1]=client;
 				Game game = new Game(numGames,clients[0],clients[1]);
 				partidas.add(game);
+				numGames++;
 				clients = new Client[2];
 			}
 			OkMessage ok = new OkMessage();
@@ -83,7 +86,7 @@ public class Server{
 					System.out.println("Mensaje recibido" + message);
 					switch(message.type()){
 						case LOGIN:
-							loginMessage(message,s);							
+							loginMessage(message,s);			
 						case PLAY:
 							break;
 						case ERROR:
@@ -97,7 +100,9 @@ public class Server{
 					}
 						*/
 					//thread = new Thread(new Attend(incon));
-					thread.start();	
+					//thread.start();	
+				}else {
+					
 				}
 			}
 		} catch (IOException e) {

@@ -36,7 +36,7 @@ public class Server{
 		}
 	}	
 
-	private Boolean isClient(String nick) {
+	private Boolean isClientFree(String nick) {
 		if(clientsMap.get(nick)!=null) {
 			return true;
 		}
@@ -47,7 +47,7 @@ public class Server{
 		System.out.println("Entra en funcion");
 		Login login = (Login) message;
 		String nick=login.getNick();
-		if(!isClient(nick)) {
+		if(isClientFree(nick)) {
 			System.out.println("Client accepted: " + nick);
 			SocketAddress ip = s.getRemoteSocketAddress();
 			Client client = new Client(ip,nick);

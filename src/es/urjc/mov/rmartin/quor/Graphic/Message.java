@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public abstract class Message {
     public enum MessageTypes {
-        LOGIN, PLAY, OK, ERROR
+        LOGIN, PLAY, OK, OKLOGIN, ERROR
     }
 
     private static final MessageTypes[] messages = MessageTypes.values();
@@ -30,6 +30,9 @@ public abstract class Message {
                 case OK:
                     message = new OkMessage();
                     break;
+                case OKLOGIN:
+                	message = new OkLogin(idata);
+                	break;
                 case ERROR:
                     message = new ErrorMessage();
                     break;
@@ -78,6 +81,36 @@ public abstract class Message {
                 throw new RuntimeException(this + "write: " + e);
             }
         }
+    }
+    
+    public static class OkLogin extends Message{
+    	private static final MessageTypes TMSG = MessageTypes.OKLOGIN;
+    	int turno;
+    	
+    	OkLogin(DataInputStream idata) throws IOException{
+    		this.turno=idata.readInt();
+    	}
+    	
+    	OkLogin(int turno){
+    		this.turno=turno;
+    	}
+
+		@Override
+		public MessageTypes type() {
+			return TMSG;
+		}
+		   
+		@Override
+		public void writeTo(DataOutputStream odata) {
+			try {
+				odata.writeInt(type().ordinal());
+				odata.writeInt(turno);
+				odata.flush();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}    	
     }
 
     public static class Login extends Message {

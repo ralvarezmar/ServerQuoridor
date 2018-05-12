@@ -14,7 +14,7 @@ import java.util.Map;
 
 import es.urjc.mov.rmartin.quor.Graphic.Message.ErrorMessage;
 import es.urjc.mov.rmartin.quor.Graphic.Message.Login;
-import es.urjc.mov.rmartin.quor.Graphic.Message.OkMessage;
+import es.urjc.mov.rmartin.quor.Graphic.Message.OkLogin;
 
 public class Server{
 
@@ -25,8 +25,8 @@ public class Server{
 	//protected Attend attend;
 	Map<String, SocketAddress> clientsMap = new HashMap<String, SocketAddress>();
 	private Client clients[] = new Client[2];
-	private ArrayList<Game> partidas = new ArrayList<Game>();
-	
+	private ArrayList<Game> partidas = new ArrayList<Game>();	
+	int turno=0;
 	
 	public Server(){
 		try {
@@ -37,7 +37,7 @@ public class Server{
 	}	
 
 	private Boolean isClientFree(String nick) {
-		if(clientsMap.get(nick)!=null) {
+		if(clientsMap.get(nick)==null) {
 			return true;
 		}
 		return false;
@@ -52,19 +52,21 @@ public class Server{
 			SocketAddress ip = s.getRemoteSocketAddress();
 			Client client = new Client(ip,nick);
 			clientsMap.put(nick, ip);
-			if(clients[0]==null) {
-				clients[0]=client;
-			}else if(clients[1]==null){
-				clients[1]=client;
-				Game game = new Game(numGames,clients[0],clients[1]);
-				partidas.add(game);
-				numGames++;
-				clients = new Client[2];
-			}
-			OkMessage ok = new OkMessage();
+			OkLogin ok = new OkLogin(turno);
 			OutputStream writer= s.getOutputStream();
 		    DataOutputStream out=new DataOutputStream(writer);
 			ok.writeTo(out);
+			if(clients[turno]==null) {
+				clients[turno]=client;
+				turno++;
+			}else if(clients[turno]==null){
+				clients[turno]=client;
+				Game game = new Game(numGames,clients[0],clients[1]);
+				partidas.add(game);
+				numGames++;
+				turno=0;
+				clients = new Client[2];
+			}			
 		}else {
 			System.out.println("Client rejected: " + nick);
 			ErrorMessage error = new ErrorMessage();
@@ -94,15 +96,12 @@ public class Server{
 						default:
 							break;
 					}
-					//Client client = new Client(ip,message.getNick());
-					/*
-					if(clientsMap.get(nick)==null) {
-					}
-						*/
-					//thread = new Thread(new Attend(incon));
-					//thread.start();	
 				}else {
-					
+					Game game = new Game(numGames,clients[0],clients[1]);
+					partidas.add(game);
+					numGames++;
+					turno=0;
+					clients = new Client[2];					
 				}
 			}
 		} catch (IOException e) {
@@ -127,57 +126,7 @@ public class Server{
 		thread.start();
 	}
 	
-
-	
 /*
-	private class Attend implements Runnable{
-
-		private Socket incon;
-		private ObjectInputStream in;
-		private ObjectOutputStream out;
-		private Socket outcon;
-
-		public Attend(Socket incon){
-			this.incon = incon;			
-		}
-		private void receiveMoves() throws ClassNotFoundException, IOException{
-			for(;;){
-				Socket incon = socket.accept();			
-				in = new ObjectInputStream(incon.getInputStream());
-				Move m;				
-				System.out.println("Espero jugada");					
-				while(in.available()<=0);
-				m = (Move) in.readObject();
-				System.out.println("Jugada recibida: " + m);
-				in.close();
-				incon.close();
-				outcon = new Socket();
-				SocketAddress ip;
-				if(incon.getRemoteSocketAddress()==clients[0].ip) {
-					ip = clients[1].ip;
-					System.out.println("Mando jugada a: " + clients[1]);
-				}else {
-					ip = clients[0].ip;
-					System.out.println("Mando jugada a: " + clients[0]);
-				}
-				outcon.connect(ip);
-				ObjectOutputStream out = new ObjectOutputStream(outcon.getOutputStream());
-				out.writeObject(m);				
-				outcon.close();
-			}
-		}
-
-		public void run(){	
-			try {
-				receiveMoves();
-			}catch(Exception e){
-				e.printStackTrace();
-			}finally {
-				closeAll();
-			}
-		}
-
-
 		public void closeAll(){
 			try {
 				if(in != null){

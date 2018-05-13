@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -15,6 +16,7 @@ import java.util.Map;
 import es.urjc.mov.rmartin.quor.Graphic.Message.ErrorMessage;
 import es.urjc.mov.rmartin.quor.Graphic.Message.Login;
 import es.urjc.mov.rmartin.quor.Graphic.Message.OkLogin;
+import es.urjc.mov.rmartin.quor.Graphic.Message.Play;
 
 public class Server{
 
@@ -44,7 +46,6 @@ public class Server{
 	}
 	
 	private void loginMessage(Message message,Socket s) throws IOException {
-		System.out.println("Entra en funcion");
 		Login login = (Login) message;
 		String nick=login.getNick();
 		if(isClientFree(nick)) {
@@ -76,6 +77,31 @@ public class Server{
 		}
 	}
 	
+	private void sendMove(Message message,Client client) {
+	    SocketAddress sockaddr = client.ip;
+	    try {
+			Socket s = new Socket();
+			s.connect(sockaddr);
+			OutputStream writer= s.getOutputStream();
+		    DataOutputStream out=new DataOutputStream(writer);
+		    message.writeTo(out);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	
+	private void playMessage(Message message) {
+		Play play = (Play) message;
+		String nick=play.getNick();
+		if(!isClientFree(nick)) {
+			if(clients[0].nick==nick) {
+				sendMove(message,clients[1]);
+			}else {
+				sendMove(message,clients[0]);
+			}
+		}
+	}
+	
 	private void connect() {
 		try{
 			System.out.println("wait clients ...");
@@ -90,6 +116,7 @@ public class Server{
 						case LOGIN:
 							loginMessage(message,s);			
 						case PLAY:
+							playMessage(message);
 							break;
 						case ERROR:
 							break;

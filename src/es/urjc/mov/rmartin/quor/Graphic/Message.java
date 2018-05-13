@@ -12,7 +12,12 @@ public abstract class Message {
 
     private static final MessageTypes[] messages = MessageTypes.values();
 
-    public abstract MessageTypes type();
+    @Override
+	public String toString() {
+		return "Message [type()=" + type() + ", getClass()=" + getClass() + ", toString()=" + super.toString() + "]";
+	}
+
+	public abstract MessageTypes type();
 
     public abstract void writeTo(DataOutputStream odata);
 
@@ -154,7 +159,6 @@ public abstract class Message {
         }
     }
     public static class Play extends Message{
-
         private static final MessageTypes TMSG = MessageTypes.PLAY;
         String nick;
         int x;

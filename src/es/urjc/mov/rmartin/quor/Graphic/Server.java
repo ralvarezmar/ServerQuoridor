@@ -57,16 +57,17 @@ public class Server{
 			OutputStream writer= s.getOutputStream();
 		    DataOutputStream out=new DataOutputStream(writer);
 			ok.writeTo(out);
-			if(clients[turno]==null) {
+			if(clients[0]==null) { //MAL 
 				clients[turno]=client;
 				turno++;
-			}else if(clients[turno]==null){
+			}else if(clients[1]==null){
 				clients[turno]=client;
 				Game game = new Game(numGames,clients[0],clients[1]);
 				partidas.add(game);
 				numGames++;
 				turno=0;
 				clients = new Client[2];
+				System.out.println("Empieza partida");
 			}			
 		}else {
 			System.out.println("Client rejected: " + nick);
@@ -85,6 +86,7 @@ public class Server{
 			OutputStream writer= s.getOutputStream();
 		    DataOutputStream out=new DataOutputStream(writer);
 		    message.writeTo(out);
+		    s.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -111,10 +113,11 @@ public class Server{
 				    InputStream reader= s.getInputStream();
 			        DataInputStream o=new DataInputStream(reader);
 					Message message = Message.ReadFrom(o);	
-					System.out.println("Mensaje recibido" + message);
+					System.out.println("Mensaje recibido: " + message);
 					switch(message.type()){
 						case LOGIN:
-							loginMessage(message,s);			
+							loginMessage(message,s);
+							break;
 						case PLAY:
 							playMessage(message);
 							break;
@@ -185,8 +188,7 @@ public class Server{
 				s.start();
 			}		
 		}.start();		
-	}	
-	
+	}		
 }
 
 

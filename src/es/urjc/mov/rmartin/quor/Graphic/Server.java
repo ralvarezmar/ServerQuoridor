@@ -24,7 +24,6 @@ public class Server{
 	private ServerSocket socket;
 	private Thread thread;
 	private int numGames=0;
-	//protected Attend attend;
 	Map<String, SocketAddress> clientsMap = new HashMap<String, SocketAddress>();
 	private Client clients[] = new Client[2];
 	private ArrayList<Game> partidas = new ArrayList<Game>();	
@@ -57,7 +56,8 @@ public class Server{
 			OutputStream writer= s.getOutputStream();
 		    DataOutputStream out=new DataOutputStream(writer);
 			ok.writeTo(out);
-			if(clients[0]==null) { //MAL 
+			out.close();
+			if(clients[0]==null) { 
 				clients[turno]=client;
 				turno++;
 			}else if(clients[1]==null){
@@ -75,6 +75,7 @@ public class Server{
 			OutputStream writer= s.getOutputStream();
 		    DataOutputStream out=new DataOutputStream(writer);
 			error.writeTo(out);
+			out.close();
 		}
 	}
 	
@@ -86,6 +87,7 @@ public class Server{
 			OutputStream writer= s.getOutputStream();
 		    DataOutputStream out=new DataOutputStream(writer);
 		    message.writeTo(out);
+		    out.close();
 		    s.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -107,36 +109,30 @@ public class Server{
 	private void connect() {
 		try{
 			System.out.println("wait clients ...");
+			
 			for(;;){
-				if(clients[0]==null || clients[1]==null) {
-					Socket s = socket.accept();
-				    InputStream reader= s.getInputStream();
-			        DataInputStream o=new DataInputStream(reader);
-					Message message = Message.ReadFrom(o);	
-					System.out.println("Mensaje recibido: " + message);
-					switch(message.type()){
-						case LOGIN:
-							loginMessage(message,s);
-							break;
-						case PLAY:
-							playMessage(message);
-							break;
-						case ERROR:
-							break;
-						default:
-							break;
-					}
-				}else {
-					Game game = new Game(numGames,clients[0],clients[1]);
-					partidas.add(game);
-					numGames++;
-					turno=0;
-					clients = new Client[2];					
+				Socket s = socket.accept();
+			    InputStream reader= s.getInputStream();
+		        DataInputStream o=new DataInputStream(reader);
+				Message message = Message.ReadFrom(o);	
+				System.out.println("Mensaje recibido: " + message);
+				switch(message.type()){
+					case LOGIN:
+						loginMessage(message,s);
+						break;
+					case PLAY:
+						playMessage(message);
+						break;
+					case ERROR:
+						break;
+					default:
+						break;
 				}
+				o.close();
 			}
 		} catch (IOException e) {
 			System.err.println("connection error: " + e);
-		} finally{
+		}/* finally{
 			try{
 				if(socket != null){
 					socket.close();
@@ -144,7 +140,7 @@ public class Server{
 			} catch (IOException e) {
 				System.err.println("error to close: " + e);  	
 			}
-		}
+		}*/
 	}
 
 	private void start(){

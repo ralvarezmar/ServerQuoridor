@@ -128,7 +128,7 @@ public class Server{
 		public GameAt(Game g) {
 			this.g=g;
 		}		
-		
+		Client clientNow=g.getClient2();
 		private void sendMove(Message message,Client client) {
 	    	new Runnable(){
                 @Override
@@ -155,9 +155,9 @@ public class Server{
 				}
 			}
 		}
-		private synchronized void receiveMessages(Client client) throws IOException {
-			//for(;;) {
-				Message message = Message.ReadFrom(client.getIn());
+		private synchronized void receiveMessages() throws IOException {
+			for(;;) {
+				Message message = Message.ReadFrom(clientNow.getIn());
 				System.out.println("Mensaje recibido: " + message);
 				switch(message.type()){					
 					case PLAY:
@@ -169,8 +169,12 @@ public class Server{
 					default:
 						break;
 				}
-				receiveMessages(g.client2);
-			//}
+				if(clientNow==g.client1) {
+					clientNow=g.client2;
+				}else {
+					clientNow=g.client1;
+				}
+			}		
 		}
 		
 	/*	public void closeAll(){
@@ -195,7 +199,7 @@ public class Server{
 		@Override
 		public void run() {
 			try{
-				receiveMessages(g.client1);	
+				receiveMessages();	
 			} catch (Exception e) {
 				System.out.println(e.getMessage());;	
 			} finally{

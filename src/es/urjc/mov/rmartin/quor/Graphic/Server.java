@@ -3,6 +3,7 @@ package es.urjc.mov.rmartin.quor.Graphic;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -20,7 +21,7 @@ public class Server{
 	private static final int PORT = 2020;
 	private ServerSocket socket;
 	public int numGames=0;
-	public static Map<String, SocketAddress> clientsMap = new HashMap<String, SocketAddress>();
+	public static Map<String, Client> clientsMap = new HashMap<String, Client>();
 	public static Map<SocketAddress, Thread> socketThreads = new HashMap<SocketAddress, Thread>();
 
 	public static Client clients[] = new Client[2];
@@ -34,16 +35,60 @@ public class Server{
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}	
+	}		
 
+	private Boolean isClientFree(String nick) {
+		if(clientsMap.get(nick)==null) {
+			return true;
+		}
+		return false;
+	}
+	
+	private void loginMessage(Message message,Socket s,DataInputStream in) throws IOException {
+		Login login = (Login) message;
+		String nick=login.getNick();
+		if(isClientFree(nick)) {
+			System.out.println("Client accepted: " + nick);
+			Client client = new Client(s,nick);
+			client.setIn(in);
+			clientsMap.put(nick, client);
+			OkLogin ok = new OkLogin(turno);			;
+			ok.writeTo(client.getOut());
+			if(clients[0]==null) { 
+				clients[turno]=client;
+				turno++;
+			}else if(clients[1]==null){
+				clients[turno]=client;
+				Game game = new Game(numGames,clients[0],clients[1]);
+				partidas.add(game);
+				numGames++;
+				turno=0;
+				clients = new Client[2];
+				System.out.println("Empieza partida");
+				Thread thread = new Thread(new GameAt(game));
+				thread.start();
+			}			
+		}else {
+			System.out.println("Client rejected: " + nick);
+			ErrorMessage error = new ErrorMessage();
+            DataOutputStream out = new DataOutputStream(s.getOutputStream());
+			error.writeTo(out);
+		}
+	}
+	
+	
 	private void connect() {
 		try{
 			System.out.println("wait clients ...");					
 			for(;;){
-				Socket s = socket.accept();				
-				//Thread thread = new Thread(new ClientAt(s));
-				//socketThreads.put(s.getLocalSocketAddress(),thread);
-				//thread.start();
+				Socket s = socket.accept();
+			    InputStream reader= s.getInputStream();
+		        DataInputStream in=new DataInputStream(reader);
+				Message message = Message.ReadFrom(in);
+				System.out.println("Mensaje recibido: " + message);
+				if(message.type()==Message.MessageTypes.LOGIN) {
+					loginMessage(message,s,in);		
+				}			
 			}
 		} catch (IOException e) {
 			System.err.println("connection error: " + e);
@@ -77,78 +122,24 @@ public class Server{
 	}		
 	
 	
-	private class ClientAt implements Runnable {
+	private class GameAt implements Runnable {
 
-		private Socket socket;
-		private DataInputStream in;
-		private DataOutputStream out;
-		private String nick;
-		private SocketAddress id;
-		
-		public ClientAt(Socket socket) {
-			this.socket=socket;
-			try {
-				this.in = new DataInputStream(socket.getInputStream());
-				this.out = new DataOutputStream(socket.getOutputStream());
-				//this.id = incon.getRemoteSocketAddress().toString().split(":")[1];	
-				this.id = socket.getRemoteSocketAddress();
-			} catch (IOException e) {
-				throw new RuntimeException(this + "open streams: " + e);
-			}		
-		}
-
-		private Boolean isClientFree(String nick) {
-			if(clientsMap.get(nick)==null) {
-				return true;
-			}
-			return false;
-		}
-		
-		private void loginMessage(Message message) throws IOException {
-			Login login = (Login) message;
-			String nick=login.getNick();
-			if(isClientFree(nick)) {
-				System.out.println("Client accepted: " + nick);
-				Client client = new Client(id,nick);
-				clientsMap.put(nick, id);
-				OkLogin ok = new OkLogin(turno);
-				ok.writeTo(out);
-				if(clients[0]==null) { 
-					clients[turno]=client;
-					turno++;
-				}else if(clients[1]==null){
-					clients[turno]=client;
-					Game game = new Game(numGames,clients[0],clients[1]);
-					partidas.add(game);
-					numGames++;
-					turno=0;
-					clients = new Client[2];
-					System.out.println("Empieza partida");
-				}			
-			}else {
-				System.out.println("Client rejected: " + nick);
-				ErrorMessage error = new ErrorMessage();
-				error.writeTo(out);
-			}
-		}
+		private Game g;
+		public GameAt(Game g) {
+			this.g=g;
+		}		
 		
 		private void sendMove(Message message,Client client) {
-		    SocketAddress sockaddr = client.ip;
 	    	new Runnable(){
                 @Override
                 public void run() {
-                	try {
-                		Thread thread = socketThreads.get(sockaddr);
-                		thread.
-                    	Socket s = new Socket();
-						s.connect(sockaddr);
-						DataOutputStream output = new DataOutputStream(s.getOutputStream());
-					    message.writeTo(output);
-					    output.close();
-					    s.close();					    						
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+                	DataOutputStream out;
+            		if(g.client1==client) {
+            			out= g.client1.out;
+            		}else {
+            			out= g.client2.out;
+            		}
+				    message.writeTo(out);					
                 }
 	    	};
 		}
@@ -157,21 +148,18 @@ public class Server{
 			Play play = (Play) message;
 			String nick=play.getNick();
 			if(!isClientFree(nick)) {
-				if(clients[0].nick==nick) {
-					sendMove(message,clients[1]);
+				if(g.client1.nick==nick) {
+					sendMove(message,g.client2);
 				}else {
-					sendMove(message,clients[0]);
+					sendMove(message,g.client1);
 				}
 			}
 		}
-		private synchronized void receiveMessages() throws IOException {
-			for(;;) {
-				Message message = Message.ReadFrom(in);	
+		private synchronized void receiveMessages(Client client) throws IOException {
+			//for(;;) {
+				Message message = Message.ReadFrom(client.getIn());
 				System.out.println("Mensaje recibido: " + message);
-				switch(message.type()){
-					case LOGIN:
-						loginMessage(message);
-						break;
+				switch(message.type()){					
 					case PLAY:
 						playMessage(message);
 						break;
@@ -181,10 +169,11 @@ public class Server{
 					default:
 						break;
 				}
-			}
+				receiveMessages(g.client2);
+			//}
 		}
 		
-		public void closeAll(){
+	/*	public void closeAll(){
 			try {
 				if(in != null){
 					in.close();
@@ -202,45 +191,18 @@ public class Server{
 				System.err.println(this + ": " + e);  
 			}
 		}
-		
+		*/
 		@Override
 		public void run() {
 			try{
-				receiveMessages();	
+				receiveMessages(g.client1);	
 			} catch (Exception e) {
 				System.out.println(e.getMessage());;	
 			} finally{
-				closeAll();
+				//closeAll();
 			}			
 		}		
 
-		public SocketAddress getId() {
-			return id;
-		}		
-		public Socket getS() {
-			return socket;
-		}
-		public void setS(Socket s) {
-			this.socket = s;
-		}
-		public DataInputStream getIn() {
-			return in;
-		}
-		public void setIn(DataInputStream in) {
-			this.in = in;
-		}
-		public DataOutputStream getOut() {
-			return out;
-		}
-		public void setOut(DataOutputStream out) {
-			this.out = out;
-		}
-		public String getNick() {
-			return nick;
-		}
-		public void setNick(String nick) {
-			this.nick = nick;
-		}
 	}
 
 }

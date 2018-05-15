@@ -3,9 +3,6 @@ package es.urjc.mov.rmartin.quor.Graphic;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -22,7 +19,6 @@ public class Server{
 
 	private static final int PORT = 2020;
 	private ServerSocket socket;
-	private Thread thread;
 	public int numGames=0;
 	public static Map<String, SocketAddress> clientsMap = new HashMap<String, SocketAddress>();
 	public static Map<SocketAddress, Thread> socketThreads = new HashMap<SocketAddress, Thread>();
@@ -42,11 +38,12 @@ public class Server{
 
 	private void connect() {
 		try{
-			System.out.println("wait clients ...");			
+			System.out.println("wait clients ...");					
 			for(;;){
-				Socket s = socket.accept();
-				thread = new Thread(new ClientAt(s));
-				thread.start();				
+				Socket s = socket.accept();				
+				//Thread thread = new Thread(new ClientAt(s));
+				//socketThreads.put(s.getLocalSocketAddress(),thread);
+				//thread.start();
 			}
 		} catch (IOException e) {
 			System.err.println("connection error: " + e);
@@ -62,7 +59,7 @@ public class Server{
 	}
 
 	private void start(){
-		thread = new Thread(){
+		Thread thread = new Thread(){
 			public void run(){
 				connect();
 			}
@@ -137,14 +134,23 @@ public class Server{
 		
 		private void sendMove(Message message,Client client) {
 		    SocketAddress sockaddr = client.ip;
-		    try {
-		    	//recuperar thread del otro cliente y mandarlo a través de ese 
-				Socket s = new Socket();
-				s.connect(sockaddr);
-			    message.writeTo(out);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+	    	new Runnable(){
+                @Override
+                public void run() {
+                	try {
+                		Thread thread = socketThreads.get(sockaddr);
+                		thread.
+                    	Socket s = new Socket();
+						s.connect(sockaddr);
+						DataOutputStream output = new DataOutputStream(s.getOutputStream());
+					    message.writeTo(output);
+					    output.close();
+					    s.close();					    						
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+                }
+	    	};
 		}
 		
 		private void playMessage(Message message) {
@@ -158,7 +164,7 @@ public class Server{
 				}
 			}
 		}
-		private void receiveMessages() throws IOException {
+		private synchronized void receiveMessages() throws IOException {
 			for(;;) {
 				Message message = Message.ReadFrom(in);	
 				System.out.println("Mensaje recibido: " + message);

@@ -25,6 +25,49 @@ public class Client {
 	}
 
 	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((in == null) ? 0 : in.hashCode());
+		result = prime * result + ((nick == null) ? 0 : nick.hashCode());
+		result = prime * result + ((out == null) ? 0 : out.hashCode());
+		result = prime * result + ((s == null) ? 0 : s.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Client other = (Client) obj;
+		if (in == null) {
+			if (other.in != null)
+				return false;
+		} else if (!in.equals(other.in))
+			return false;
+		if (nick == null) {
+			if (other.nick != null)
+				return false;
+		} else if (!nick.equals(other.nick))
+			return false;
+		if (out == null) {
+			if (other.out != null)
+				return false;
+		} else if (!out.equals(other.out))
+			return false;
+		if (s == null) {
+			if (other.s != null)
+				return false;
+		} else if (!s.equals(other.s))
+			return false;
+		return true;
+	}
+
+	@Override
 	public String toString() {
 		return "Client [s=" + s + ", nick=" + nick + ", in=" + in + ", out=" + out + "]";
 	}

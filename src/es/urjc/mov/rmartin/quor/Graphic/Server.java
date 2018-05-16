@@ -128,37 +128,36 @@ public class Server{
 		public GameAt(Game g) {
 			this.g=g;
 		}		
-		Client clientNow=g.getClient2();
+		Client clientNow;
 		private void sendMove(Message message,Client client) {
-	    	new Runnable(){
-                @Override
-                public void run() {
+	    	//new Runnable(){
+              //  @Override
+              //  public void run() {
                 	DataOutputStream out;
-            		if(g.client1==client) {
-            			out= g.client1.out;
-            		}else {
-            			out= g.client2.out;
-            		}
+                	out=client.getOut();
+					System.out.println("Antes de enviar mensaje");
 				    message.writeTo(out);					
-                }
-	    	};
+              //  }
+	    	//};
 		}
 		
 		private void playMessage(Message message) {
 			Play play = (Play) message;
 			String nick=play.getNick();
-			if(!isClientFree(nick)) {
-				if(g.client1.nick==nick) {
-					sendMove(message,g.client2);
-				}else {
-					sendMove(message,g.client1);
-				}
+			System.out.println("Entra en play message: " + nick + " " + g.getClient1().getNick() + " "+ g.getClient2().getNick());
+			if(g.getClient1().getNick()==nick) {
+				System.out.println("Antes de sendMove1");
+				sendMove(message,g.client2);
+			}else {
+				System.out.println("Antes de sendMove2");
+				sendMove(message,g.client1);
 			}
+			
 		}
 		private synchronized void receiveMessages() throws IOException {
 			for(;;) {
 				Message message = Message.ReadFrom(clientNow.getIn());
-				System.out.println("Mensaje recibido: " + message);
+				System.out.println("Mensaje recibido en hilo partida: " + message);
 				switch(message.type()){					
 					case PLAY:
 						playMessage(message);
@@ -199,6 +198,7 @@ public class Server{
 		@Override
 		public void run() {
 			try{
+				clientNow=g.getClient2();
 				receiveMessages();	
 			} catch (Exception e) {
 				System.out.println(e.getMessage());;	

@@ -52,13 +52,13 @@ public class Server{
 			Client client = new Client(s,nick);
 			client.setIn(in);
 			clientsMap.put(nick, client);
-			OkLogin ok = new OkLogin(turno);			;
+			OkLogin ok = new OkLogin(turno);
 			ok.writeTo(client.getOut());
 			if(clients[0]==null) { 
-				clients[turno]=client;
+				clients[0]=client;
 				turno++;
 			}else if(clients[1]==null){
-				clients[turno]=client;
+				clients[1]=client;
 				Game game = new Game(numGames,clients[0],clients[1]);
 				partidas.add(game);
 				numGames++;
@@ -145,19 +145,25 @@ public class Server{
 			Play play = (Play) message;
 			String nick=play.getNick();
 			System.out.println("Entra en play message: " + nick + " " + g.getClient1().getNick() + " "+ g.getClient2().getNick());
-			if(g.getClient1().getNick()==nick) {
+			/*if(g.getClient1()==clientNow) {
 				System.out.println("Antes de sendMove1");
-				sendMove(message,g.client2);
+				sendMove(message,clientNow);
 			}else {
 				System.out.println("Antes de sendMove2");
-				sendMove(message,g.client1);
-			}
+				sendMove(message,clientNow);
+			}*/
+			sendMove(message,clientNow);
 			
 		}
 		private synchronized void receiveMessages() throws IOException {
 			for(;;) {
 				Message message = Message.ReadFrom(clientNow.getIn());
 				System.out.println("Mensaje recibido en hilo partida: " + message);
+				if(clientNow==g.client1) {
+					clientNow=g.client2;
+				}else {
+					clientNow=g.client1;
+				}
 				switch(message.type()){					
 					case PLAY:
 						playMessage(message);
@@ -167,12 +173,7 @@ public class Server{
 						break;
 					default:
 						break;
-				}
-				if(clientNow==g.client1) {
-					clientNow=g.client2;
-				}else {
-					clientNow=g.client1;
-				}
+				}				
 			}		
 		}
 		

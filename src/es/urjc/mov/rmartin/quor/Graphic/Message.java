@@ -217,6 +217,7 @@ public abstract class Message {
                 odata.writeInt(x);
                 odata.writeInt(y);
                 odata.writeBoolean(type);
+                System.out.print("Mandado: " + buf + x + y + type);
                 odata.flush();
             }catch (IOException e){
                 throw new RuntimeException(this + "write: " + e);

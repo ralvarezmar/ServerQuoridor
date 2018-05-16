@@ -17,7 +17,6 @@ import es.urjc.mov.rmartin.quor.Graphic.Message.OkLogin;
 import es.urjc.mov.rmartin.quor.Graphic.Message.Play;
 
 public class Server{
-
 	private static final int PORT = 2020;
 	private ServerSocket socket;
 	public int numGames=0;
@@ -129,29 +128,18 @@ public class Server{
 			this.g=g;
 		}		
 		Client clientNow;
-		private void sendMove(Message message,Client client) {
-	    	//new Runnable(){
-              //  @Override
-              //  public void run() {
-                	DataOutputStream out;
-                	out=client.getOut();
-					System.out.println("Antes de enviar mensaje");
-				    message.writeTo(out);					
-              //  }
-	    	//};
+		private void sendMove(Message message,Client client) {	  
+        	DataOutputStream out;
+        	out=client.getOut();
+			System.out.println("Antes de enviar mensaje");
+		    message.writeTo(out);				       
 		}
 		
 		private void playMessage(Message message) {
 			Play play = (Play) message;
 			String nick=play.getNick();
 			System.out.println("Entra en play message: " + nick + " " + g.getClient1().getNick() + " "+ g.getClient2().getNick());
-			/*if(g.getClient1()==clientNow) {
-				System.out.println("Antes de sendMove1");
-				sendMove(message,clientNow);
-			}else {
-				System.out.println("Antes de sendMove2");
-				sendMove(message,clientNow);
-			}*/
+		
 			sendMove(message,clientNow);
 			
 		}
@@ -177,25 +165,31 @@ public class Server{
 			}		
 		}
 		
-	/*	public void closeAll(){
+		public void closeAll(){
 			try {
-				if(in != null){
-					in.close();
-					in = null;
+				if(g.getClient1().getIn() != null){
+					g.getClient1().getIn().close();
 				}
-				if(out != null){
-					out.close();
-					out = null;
+				if(g.getClient2().getIn() != null){
+					g.getClient2().getIn().close();
 				}	
-				if(socket != null){
-					socket.close();
-					socket = null;
+				if(g.getClient1().getOut() != null){
+					g.getClient1().getIn().close();
+				}
+				if(g.getClient2().getOut() != null){
+					g.getClient2().getIn().close();
+				}	
+				if(g.getClient1().getS() != null){
+					g.getClient1().getS().close();
+				}				
+				if(g.getClient2().getS() != null){
+					g.getClient1().getS().close();
 				}
 			} catch (IOException e) {
 				System.err.println(this + ": " + e);  
 			}
 		}
-		*/
+		
 		@Override
 		public void run() {
 			try{
@@ -204,7 +198,7 @@ public class Server{
 			} catch (Exception e) {
 				System.out.println(e.getMessage());;	
 			} finally{
-				//closeAll();
+				closeAll();
 			}			
 		}		
 

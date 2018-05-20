@@ -174,16 +174,16 @@ public class Server{
 					g.getClient2().getIn().close();
 				}	
 				if(g.getClient1().getOut() != null){
-					g.getClient1().getIn().close();
+					g.getClient1().getOut().close();
 				}
 				if(g.getClient2().getOut() != null){
-					g.getClient2().getIn().close();
+					g.getClient2().getOut().close();
 				}	
 				if(g.getClient1().getS() != null){
 					g.getClient1().getS().close();
 				}				
 				if(g.getClient2().getS() != null){
-					g.getClient1().getS().close();
+					g.getClient2().getS().close();
 				}
 			} catch (IOException e) {
 				System.err.println(this + ": " + e);  
@@ -201,9 +201,7 @@ public class Server{
 				closeAll();
 			}			
 		}		
-
 	}
-
 }
 
 

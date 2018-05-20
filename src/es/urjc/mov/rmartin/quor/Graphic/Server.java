@@ -43,7 +43,7 @@ public class Server{
 		return false;
 	}
 	
-	private void loginMessage(Message message,Socket s,DataInputStream in) throws IOException {
+	private synchronized void loginMessage(Message message,Socket s,DataInputStream in) throws IOException {
 		Login login = (Login) message;
 		String nick=login.getNick();
 		if(isClientFree(nick)) {

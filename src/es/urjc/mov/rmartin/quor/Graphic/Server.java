@@ -86,7 +86,7 @@ public class Server{
 				Message message = Message.ReadFrom(in);
 				System.out.println("Mensaje recibido: " + message);
 				if(message.type()==Message.MessageTypes.LOGIN) {
-					loginMessage(message,s,in);		
+					loginMessage(message,s,in);
 				}			
 			}
 		} catch (IOException e) {
@@ -117,7 +117,7 @@ public class Server{
 				Server s = new Server();
 				s.start();
 			}		
-		}.start();		
+		}.start();
 	}		
 	
 	
@@ -131,14 +131,12 @@ public class Server{
 		private void sendMove(Message message,Client client) {	  
         	DataOutputStream out;
         	out=client.getOut();
-			System.out.println("Antes de enviar mensaje");
 		    message.writeTo(out);				       
 		}
 		
 		private void playMessage(Message message) {
 			Play play = (Play) message;
 			String nick=play.getNick();
-			System.out.println("Entra en play message: " + nick + " " + g.getClient1().getNick() + " "+ g.getClient2().getNick());
 		
 			sendMove(message,clientNow);
 			
@@ -198,6 +196,7 @@ public class Server{
 			} catch (Exception e) {
 				System.out.println(e.getMessage());;	
 			} finally{
+				System.out.println("Fin de partida " + g.getId());
 				closeAll();
 			}			
 		}		

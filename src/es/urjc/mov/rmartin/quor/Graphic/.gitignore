@@ -19,3 +19,5 @@
 /GameAt.class
 /Message$Map.class
 /Message$MapStatus.class
+/Message$PositionMessage.class
+/Position.class

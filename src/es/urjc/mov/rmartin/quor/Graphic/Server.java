@@ -15,6 +15,7 @@ import es.urjc.mov.rmartin.quor.Graphic.Message.ErrorMessage;
 import es.urjc.mov.rmartin.quor.Graphic.Message.Login;
 import es.urjc.mov.rmartin.quor.Graphic.Message.OkLogin;
 import es.urjc.mov.rmartin.quor.Graphic.Message.Play;
+import es.urjc.mov.rmartin.quor.Graphic.Message.PositionMessage;
 
 public class Server{
 	private static final int PORT = 2020;
@@ -22,7 +23,7 @@ public class Server{
 	public int numGames=0;
 	public static Map<String, Client> clientsMap = new HashMap<String, Client>();
 	public static Map<SocketAddress, Thread> socketThreads = new HashMap<SocketAddress, Thread>();
-
+	public static ArrayList<Position> positionMap = new ArrayList<Position>();
 	public static Client clients[] = new Client[2];
 	public ArrayList<Game> partidas = new ArrayList<Game>();	
 	public static int turno=0;
@@ -75,6 +76,26 @@ public class Server{
 		}
 	}
 	
+	private void mapMessage(Message msg, Socket s) {
+		try {
+			DataOutputStream out = new DataOutputStream(s.getOutputStream());
+			PositionMessage message = (PositionMessage) msg;
+			String nick = message.getNick();
+			Double latitude = message.getLatitude();
+			Double longitude = message.getLongitude();
+			Position position = new Position(nick,latitude,longitude);
+			if(positionMap.size()>0) {
+				Position pos = positionMap.get(0);
+				System.out.println(pos);
+				Message posMsg = new PositionMessage(pos.getNick(), pos.getLatitude(),pos.getLongitude());
+				posMsg.writeTo(out);
+			}
+			positionMap.add(position);		
+			s.close();
+		} catch (IOException e) {			
+			e.printStackTrace();
+		}
+	}
 	
 	private void connect() {
 		try{
@@ -87,7 +108,9 @@ public class Server{
 				System.out.println("Mensaje recibido: " + message);
 				if(message.type()==Message.MessageTypes.LOGIN) {
 					loginMessage(message,s,in);
-				}			
+				}else if(message.type()==Message.MessageTypes.POSITION) {
+					mapMessage(message,s);
+				}
 			}
 		} catch (IOException e) {
 			System.err.println("connection error: " + e);
@@ -136,7 +159,7 @@ public class Server{
 		
 		private void playMessage(Message message) {
 			Play play = (Play) message;
-			String nick=play.getNick();
+			//String nick=play.getNick();
 		
 			sendMove(message,clientNow);
 			
